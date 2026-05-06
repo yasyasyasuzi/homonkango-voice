@@ -714,52 +714,35 @@ function toggleTerms() {
 // ═══════════════════════════════════════════
 // 音声認識
 // ═══════════════════════════════════════════
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition;
+// Whisper録音用
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let timerInterval = null;
+let seconds = 0;
+let accumulated = '';
 
-if (!SR) {
-  document.getElementById('warnBox').style.display = 'block';
-  document.getElementById('micBtn').disabled = true;
-}
-
-function buildRecognition() {
-  recognition = new SR();
-  recognition.lang = 'ja-JP';
-  recognition.continuous = true;
-  recognition.interimResults = true;
-
-  recognition.onresult = e => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) {
-        accumulated += applyCorrections(t);
-        updateTranscript();
-      } else {
-        interim += t;
-      }
+async function sendToWhisper(blob) {
+  const liveBox = document.getElementById('liveBox');
+  liveBox.textContent = '文字起こし中…';
+  try {
+    const formData = new FormData();
+    formData.append('audio', blob, 'audio.webm');
+    const res = await fetch('/api/transcribe', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (data.text) {
+      accumulated += applyCorrections(data.text);
+      updateTranscript();
+      liveBox.textContent = data.text;
+    } else {
+      liveBox.textContent = 'エラーが発生しました';
     }
-    updateLive(interim);
-  };
-
-  recognition.onerror = e => {
-    if (e.error === 'no-speech') return;
-    if (e.error === 'not-allowed') {
-      showToast('マイクの許可が必要です。設定から許可してください。');
-      stopRecording(); return;
-    }
-    showToast('認識エラー: ' + e.error);
-    stopRecording();
-  };
-
-  recognition.onend = () => {
-    if (isRecording) {
-      try { recognition.start(); } catch(e) {
-        buildRecognition();
-        try { recognition.start(); } catch(e2) {}
-      }
-    }
-  };
+  } catch(e) {
+    liveBox.textContent = '通信エラーが発生しました';
+  }
 }
 
 function toggleRecording() {
@@ -767,11 +750,20 @@ function toggleRecording() {
 }
 
 function startRecording() {
-  if (!SR) return;
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then(stream => {
-      stream.getTracks().forEach(t => t.stop());
-      buildRecognition();
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) audioChunks.push(e.data);
+      };
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        stream.getTracks().forEach(t => t.stop());
+        await sendToWhisper(blob);
+        updateAiBtn();
+      };
+      mediaRecorder.start();
       isRecording = true;
       seconds = 0;
       timerInterval = setInterval(() => {
@@ -779,19 +771,24 @@ function startRecording() {
         const m = Math.floor(seconds/60), s = seconds%60;
         document.getElementById('micTimer').textContent = m+':'+String(s).padStart(2,'0');
       }, 1000);
-      try { recognition.start(); } catch(e) {}
       setUI(true);
     })
     .catch(err => {
-      showToast('マイクの許可が必要です。設定からSafariのマイクを許可してください。');
+      showToast('マイクの許可が必要です');
+      setTimeout(() => {
+        if (confirm('設定のマイク許可画面を開きますか？')) {
+          window.location.href = 'app-settings:';
+        }
+      }, 500);
     });
 }
 
 function stopRecording() {
   isRecording = false;
   clearInterval(timerInterval);
-  try { recognition.stop(); } catch(e){}
-  updateLive('');
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
   setUI(false);
 }
 
@@ -833,7 +830,7 @@ function setUI(rec) {
 
 function updateLive(text) {
   const box = document.getElementById('liveBox');
-  box.textContent = text || (isRecording ? '（話してください…）' : '話し始めるとここに表示されます…');
+  box.textContent = text || '話し始めるとここに表示されます…';
 }
 
 function updateTranscript() {
