@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>訪問看護ST｜音声記録</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --bg: #f7f5f2;
+  --bg2: #ffffff;
+  --surface: #ffffff;
+  --surface2: #f0ede8;
+  --border: #e2ddd6;
+  --border2: #ccc8c0;
+  --text: #1a1714;
+  --text-soft: #6b6560;
+  --text-faint: #b0aaa2;
+  --nurse: #1a6b4a;
+  --nurse-light: #e8f4ee;
+  --pt: #1a4a6b;
+  --pt-light: #e8f0f4;
+  --ot: #6b2e1a;
+  --ot-light: #f4ece8;
+  --ai: #5b3fa6;
+  --ai-light: #f0ecfb;
+  --danger: #c0392b;
+  --accent: #1a6b4a;
+  --radius: 16px;
+  --radius-sm: 12px;
+  --shadow: 0 2px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.1);
+}
+
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 220px;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px 14px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: var(--shadow);
+}
+.header-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-icon {
+  width: 36px; height: 36px;
+  background: var(--nurse);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.logo-text {
+  font-family: 'DM Serif Display', serif;
+  font-size: 17px;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.logo-sub {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+/* 職種タブ */
+.role-tabs {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+}
+.role-tab {
+  padding: 11px 4px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid transparent;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface2);
+  color: var(--text-soft);
+}
+.role-tab[data-role="nurse"].active { background: var(--nurse); color: white; border-color: var(--nurse); }
+.role-tab[data-role="pt"].active    { background: var(--pt);    color: white; border-color: var(--pt); }
+.role-tab[data-role="ot"].active    { background: var(--ot);    color: white; border-color: var(--ot); }
+.role-tab:not(.active):hover { background: var(--border); }
+
+/* ── MAIN ── */
+.main { padding: 20px 16px; max-width: 520px; margin: 0 auto; }
+
+/* カード */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+
+/* ラベル */
+.label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.label-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-faint);
+}
+
+/* テキストエリア */
+.transcript-area {
+  width: 100%; min-height: 140px;
+  background: transparent;
+  border: none;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 16px; line-height: 1.8;
+  color: var(--text);
+  resize: none; outline: none;
+}
+.transcript-area::placeholder { color: var(--text-faint); }
+.char-row {
+  display: flex; justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.char-count { font-size: 12px; color: var(--text-faint); }
+
+/* 個人情報バナー */
+.privacy-card {
+  background: var(--ai-light);
+  border: 1px solid rgba(91,63,166,0.15);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.privacy-icon { font-size: 20px; flex-shrink: 0; }
+.privacy-body { flex: 1; }
+.privacy-title { font-size: 13px; font-weight: 700; color: var(--ai); margin-bottom: 3px; }
+.privacy-desc { font-size: 12px; color: var(--text-soft); line-height: 1.6; }
+.anon-btn {
+  flex-shrink: 0; padding: 7px 14px;
+  background: white; border: 1.5px solid rgba(91,63,166,0.3);
+  color: var(--ai); border-radius: 100px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: all 0.2s;
+}
+.anon-btn:active { background: var(--ai); color: white; }
+
+/* フォーマット選択 */
+.format-row {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+.fmt-btn {
+  flex: 1; padding: 9px 8px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-soft);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.fmt-btn.active {
+  background: var(--ai-light);
+  border-color: rgba(91,63,166,0.4);
+  color: var(--ai);
+}
+
+/* AI清書エリア */
+.ai-card {
+  background: var(--surface);
+  border: 1.5px solid rgba(91,63,166,0.2);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.ai-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.ai-label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ai);
+  display: flex; align-items: center; gap: 6px;
+}
+.ai-badge {
+  background: var(--ai-light);
+  border: 1px solid rgba(91,63,166,0.2);
+  color: var(--ai);
+  font-size: 10px; font-weight: 700;
+  padding: 3px 10px; border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.05em;
+}
+.ai-output {
+  font-size: 16px; line-height: 1.85;
+  color: var(--text);
+  white-space: pre-wrap;
+  min-height: 80px;
+}
+.ai-output .placeholder { color: var(--text-faint); font-style: italic; font-size: 14px; }
+
+.ai-loading {
+  display: none; align-items: center; gap: 10px;
+  color: var(--ai); font-size: 14px;
+}
+.ai-loading.show { display: flex; }
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(91,63,166,0.2);
+  border-top-color: var(--ai);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* アクションボタン */
+.action-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin-bottom: 10px;
+}
+.action-btn {
+  padding: 14px 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-soft);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all 0.18s;
+  box-shadow: var(--shadow);
+}
+.action-btn:active { transform: scale(0.97); }
+.btn-ai-run {
+  grid-column: 1 / -1;
+  background: var(--ai);
+  color: white; border-color: var(--ai);
+  padding: 16px;
+  font-size: 14px;
+  box-shadow: 0 4px 20px rgba(91,63,166,0.3);
+}
+.btn-ai-run:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-copy-ai {
+  background: var(--ai-light);
+  color: var(--ai);
+  border-color: rgba(91,63,166,0.2);
+}
+.btn-clear {
+  color: var(--danger);
+  border-color: rgba(192,57,43,0.2);
+  background: rgba(192,57,43,0.04);
+}
+
+/* ── 固定録音ボタン ── */
+.fixed-mic {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: 12px 20px 28px;
+  z-index: 200;
+  display: flex; justify-content: center;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+}
+.fixed-mic-inner {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+  max-width: 520px; width: 100%;
+}
+.rec-indicator {
+  display: none; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700;
+  color: var(--danger); letter-spacing: 0.1em;
+}
+.rec-indicator.show { display: flex; }
+.rec-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--danger);
+  animation: blink 1s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.mic-status {
+  font-size: 12px; font-weight: 500;
+  color: var(--text-soft); letter-spacing: 0.04em;
+}
+.mic-status.recording { color: var(--danger); }
+.mic-timer {
+  font-size: 15px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
+  font-family: 'DM Sans', sans-serif;
+  opacity: 0; transition: opacity 0.3s;
+}
+.mic-timer.visible { opacity: 1; }
+
+/* START/REC ボタン */
+.mic-btn {
+  width: 96px; height: 96px; border-radius: 50%;
+  cursor: pointer;
+  background: var(--nurse);
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 700;
+  color: white; letter-spacing: 2px;
+  transition: all 0.18s cubic-bezier(.34,1.56,.64,1);
+  box-shadow: 0 6px 28px rgba(26,107,74,0.35);
+}
+.mic-btn:active { transform: scale(0.92); }
+.mic-btn.recording {
+  background: var(--danger);
+  box-shadow: 0 0 0 0 rgba(192,57,43,0.4);
+  animation: rec-pulse 1.3s infinite ease-in-out;
+}
+.mic-btn.recording:active { animation: none; transform: scale(0.92); }
+@keyframes rec-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(192,57,43,0.4); }
+  50%  { box-shadow: 0 0 0 16px rgba(192,57,43,0); }
+  100% { box-shadow: 0 0 0 0 rgba(192,57,43,0); }
+}
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 200px; left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: var(--text);
+  color: white; padding: 10px 20px;
+  border-radius: 100px; font-size: 13px; font-weight: 500;
+  opacity: 0; transition: all 0.25s;
+  pointer-events: none; z-index: 300;
+  white-space: nowrap;
+  box-shadow: var(--shadow-lg);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-icon">🏥</div>
+      <div>
+        <div class="logo-text">訪問看護ステーション</div>
+        <div class="logo-sub">音声記録システム</div>
+      </div>
+    </div>
+  </div>
+  <div class="role-tabs">
+    <button class="role-tab active" data-role="nurse" onclick="setRole('nurse')">看護師</button>
+    <button class="role-tab" data-role="pt" onclick="setRole('pt')">PT</button>
+    <button class="role-tab" data-role="ot" onclick="setRole('ot')">OT</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- 録音テキスト -->
+  <div class="card">
+    <div class="label"><div class="label-dot"></div>録音テキスト（編集可）</div>
+    <textarea class="transcript-area" id="transcriptArea" placeholder="STARTをタップして話してください。&#10;STOPで録音終了 → 自動で文字起こしされます。"></textarea>
+    <div class="char-row">
+      <div class="char-count" id="charCount">0文字</div>
+    </div>
+  </div>
+
+  <!-- 個人情報 -->
+  <div class="privacy-card">
+    <div class="privacy-icon">🔒</div>
+    <div class="privacy-body">
+      <div class="privacy-title">個人情報の取り扱いについて</div>
+      <div class="privacy-desc">氏名・住所などは入力しないでください。「●●様」などに置き換えてご使用ください。</div>
+    </div>
+    <button class="anon-btn" onclick="anonymize()">匿名化</button>
+  </div>
+
+  <!-- AI清書 -->
+  <div class="ai-card">
+    <div class="ai-card-header">
+      <div class="ai-label"><div class="label-dot" style="background:var(--ai)"></div>AI 清書</div>
+      <div class="ai-badge">✦ Claude</div>
+    </div>
+    <div class="format-row">
+      <button class="fmt-btn active" id="fmtProse" onclick="setFormat('prose')">📝 通常文章</button>
+      <button class="fmt-btn" id="fmtBullet" onclick="setFormat('bullet')">📋 箇条書き</button>
+    </div>
+    <div class="ai-loading" id="aiLoading"><div class="spinner"></div><span>AI が清書中…</span></div>
+    <div class="ai-output" id="aiOutput">
+      <span class="placeholder">「AI清書する」ボタンを押すと&#10;報告書文体に整形します。</span>
+    </div>
+  </div>
+
+  <!-- アクション -->
+  <div class="action-grid">
+    <button class="action-btn btn-ai-run" id="aiBtn" onclick="runAI()" disabled>✦ AI清書する</button>
+    <button class="action-btn" onclick="copyText('transcript')">📋 録音テキストをコピー</button>
+    <button class="action-btn btn-copy-ai" onclick="copyText('ai')">✦ AI清書をコピー</button>
+    <button class="action-btn btn-clear" onclick="clearAll()">🗑️ クリア</button>
+  </div>
+
+</div>
+
+<!-- 固定録音ボタン -->
+<div class="fixed-mic">
+  <div class="fixed-mic-inner">
+    <div class="rec-indicator" id="recIndicator"><div class="rec-dot"></div>REC</div>
+    <div class="mic-status" id="micStatus">タップして録音開始</div>
+    <button class="mic-btn" id="micBtn" onclick="toggleRecording()">START</button>
+    <div class="mic-timer" id="micTimer">0:00</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentRole = 'nurse';
+let outputFormat = 'prose';
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let timerInterval = null;
+let seconds = 0;
+let accumulated = '';
+let aiText = '';
+
+function setRole(role) {
+  currentRole = role;
+  document.querySelectorAll('.role-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.role === role);
+  });
+}
+
+function setFormat(fmt) {
+  outputFormat = fmt;
+  document.getElementById('fmtProse').classList.toggle('active', fmt === 'prose');
+  document.getElementById('fmtBullet').classList.toggle('active', fmt === 'bullet');
+}
+
+const CORRECTIONS = {
+  'かんせつかどういき':'関節可動域','きんきんちょう':'筋緊張',
+  'はいようしょうこうぐん':'廃用症候群','こうしゅく':'拘縮',
+  'ふしゅ':'浮腫','じょくそう':'褥瘡','えんげしょうがい':'嚥下障害','ごえん':'誤嚥'
+};
+function applyCorrections(text) {
+  let r = text;
+  for (const [k,v] of Object.entries(CORRECTIONS)) r = r.replace(new RegExp(k,'g'),v);
+  return r;
+}
+
+function playBeep(freq, duration) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = freq; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function toggleRecording() {
+  if (isRecording) stopRecording(); else startRecording();
+}
+
+function startRecording() {
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      audioChunks = [];
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+      mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(audioChunks, { type: mimeType });
+        await sendToWhisper(blob, mimeType);
+      };
+      mediaRecorder.start();
+      isRecording = true; seconds = 0;
+      timerInterval = setInterval(() => {
+        seconds++;
+        const m = Math.floor(seconds/60), s = seconds%60;
+        document.getElementById('micTimer').textContent = m+':'+String(s).padStart(2,'0');
+      }, 1000);
+      playBeep(880, 0.15);
+      setUI(true);
+    })
+    .catch(() => { showToast('マイクの許可が必要です'); });
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  isRecording = false; clearInterval(timerInterval);
+  playBeep(440, 0.2);
+  setUI(false);
+}
+
+async function sendToWhisper(blob, mimeType) {
+  showToast('文字起こし中…');
+  try {
+    const ext = mimeType.includes('mp4') ? 'audio.mp4' : 'audio.webm';
+    const formData = new FormData();
+    formData.append('audio', blob, ext);
+    const res = await fetch('/api/transcribe', { method:'POST', body:formData });
+    const data = await res.json();
+    if (data.text) {
+      accumulated += applyCorrections(data.text);
+      updateTranscript();
+      showToast('文字起こし完了！');
+    } else {
+      showToast('エラー: ' + (data.error || '不明'));
+    }
+  } catch(e) {
+    showToast('通信エラーが発生しました');
+  }
+  updateAiBtn();
+}
+
+function setUI(rec) {
+  const btn = document.getElementById('micBtn');
+  const status = document.getElementById('micStatus');
+  const timer = document.getElementById('micTimer');
+  const recInd = document.getElementById('recIndicator');
+  if (rec) {
+    btn.classList.add('recording'); btn.textContent = 'REC';
+    status.textContent = '録音中 — タップして停止'; status.classList.add('recording');
+    timer.classList.add('visible'); recInd.classList.add('show');
+  } else {
+    btn.classList.remove('recording'); btn.textContent = 'START';
+    status.textContent = 'タップして録音開始'; status.classList.remove('recording');
+    timer.classList.remove('visible'); recInd.classList.remove('show');
+  }
+}
+
+function updateTranscript() {
+  const area = document.getElementById('transcriptArea');
+  area.value = accumulated; area.scrollTop = area.scrollHeight;
+  updateCharCount();
+}
+function updateCharCount() {
+  document.getElementById('charCount').textContent =
+    document.getElementById('transcriptArea').value.length + '文字';
+}
+function updateAiBtn() {
+  document.getElementById('aiBtn').disabled =
+    !document.getElementById('transcriptArea').value.trim();
+}
+document.getElementById('transcriptArea').addEventListener('input', () => {
+  accumulated = document.getElementById('transcriptArea').value;
+  updateCharCount(); updateAiBtn();
+});
+
+const FORMAT_INSTRUCTION = {
+  prose: '- 箇条書きは使わず、自然な文章（体言止め）で記述する',
+  bullet: '- 各項目は箇条書き（・）で簡潔に記述する'
+};
+const PROMPTS = {
+  nurse: t => `あなたは訪問看護師の記録をサポートするAIです。以下の音声入力テキストを訪問看護記録として清書してください。\n【ルール】\n- 記録文体（体言止め・過去形・客観的）\n- 個人名は「●●様」のまま\n${FORMAT_INSTRUCTION[outputFormat]}\n- 情報がある項目のみ整理：【バイタルサイン】【ADL・生活状況】【医療処置】【観察・経過】【申し送り】\n- 不明確な部分は「（要確認）」\n\n【音声入力】\n${t}\n\n【清書後の記録文】`,
+  pt: t => `あなたは理学療法士（PT）の訪問リハビリ記録をサポートするAIです。以下をSOAP形式で清書してください。\n【ルール】\n- 記録文体（体言止め・過去形・客観的）\n- 個人名は「●●様」のまま\n${FORMAT_INSTRUCTION[outputFormat]}\n- 【S】【O】【A】【P】で整理\n- 不明確な部分は「（要確認）」\n\n【音声入力】\n${t}\n\n【清書後の記録文】`,
+  ot: t => `あなたは作業療法士（OT）の訪問リハビリ記録をサポートするAIです。以下を清書してください。\n【ルール】\n- 記録文体（体言止め・過去形・客観的）\n- 個人名は「●●様」のまま\n${FORMAT_INSTRUCTION[outputFormat]}\n- 情報がある項目のみ：【ADL自立度】【上肢機能】【認知機能】【作業遂行】【今後の目標】\n- 不明確な部分は「（要確認）」\n\n【音声入力】\n${t}\n\n【清書後の記録文】`
+};
+
+async function runAI() {
+  const text = document.getElementById('transcriptArea').value.trim();
+  if (!text) return;
+  const loading = document.getElementById('aiLoading');
+  const output = document.getElementById('aiOutput');
+  const btn = document.getElementById('aiBtn');
+  loading.classList.add('show'); output.innerHTML = ''; btn.disabled = true;
+  try {
+    const res = await fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ prompt: PROMPTS[currentRole](text), role: currentRole })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    aiText = data.text || '（清書に失敗しました）';
+    output.textContent = aiText;
+    showToast('AI清書が完了しました！');
+  } catch(e) {
+    output.innerHTML = '<span class="placeholder">エラーが発生しました。</span>';
+    showToast('AI清書に失敗しました');
+  } finally {
+    loading.classList.remove('show'); btn.disabled = false;
+  }
+}
+
+async function copyText(target) {
+  const text = target === 'ai' ? aiText : document.getElementById('transcriptArea').value;
+  if (!text.trim()) { showToast('コピーするテキストがありません'); return; }
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast(target === 'ai' ? 'AI清書をコピーしました' : '録音テキストをコピーしました');
+  } catch { showToast('コピーに失敗しました'); }
+}
+
+function clearAll() {
+  if (!document.getElementById('transcriptArea').value.trim() && !aiText) return;
+  if (!confirm('テキストをクリアしますか？')) return;
+  accumulated = ''; aiText = '';
+  document.getElementById('transcriptArea').value = '';
+  document.getElementById('aiOutput').innerHTML = '<span class="placeholder">「AI清書する」ボタンを押すと&#10;報告書文体に整形します。</span>';
+  updateCharCount(); updateAiBtn();
+  showToast('クリアしました');
+}
+
+function anonymize() {
+  const area = document.getElementById('transcriptArea');
+  if (!area.value.trim()) { showToast('テキストがありません'); return; }
+  area.value = area.value
+    .replace(/([ぁ-んァ-ン一-龯]{1,4})(さん|様|氏|さま)/g, '●●$2')
+    .replace(/([ぁ-んァ-ン一-龯]{1,3})家/g, '●●家');
+  accumulated = area.value;
+  updateCharCount();
+  showToast('匿名化しました');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+updateCharCount(); updateAiBtn();
+</script>
+</body>
+</html>
